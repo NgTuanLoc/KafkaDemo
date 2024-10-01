@@ -14,4 +14,9 @@
     <PackageReference Include="Aspire.Hosting.Kafka" Version="8.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Consumer\Consumer.csproj" />
+    <ProjectReference Include="..\Producer\Producer.csproj" />
+  </ItemGroup>
+
 </Project>
