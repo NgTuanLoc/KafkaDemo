@@ -1,9 +1,13 @@
 using Confluent.Kafka;
 using Consumer;
+using MassTransit;
+using SharedLibrary;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddKafkaConsumer<string, string>("messaging");
-builder.Services.AddHostedService<EventConsumerJob>();
+
+AddEventBus(builder);
+//builder.Services.AddHostedService<EventConsumerJob>();
 // Add services to the container.
 
 var app = builder.Build();
@@ -21,3 +25,29 @@ app.MapGet("/", (IConsumer<string, string> consumer) =>
 });
 
 await app.RunAsync();
+
+static void AddEventBus(WebApplicationBuilder builder)
+{
+    // Configure MassTransit with Kafka Rider
+    builder.Services.AddMassTransit(config =>
+    {
+        config.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+
+        config.AddRider(rider =>
+        {
+            rider.AddConsumer<MessageConsumer>();
+
+            rider.UsingKafka((context, k) =>
+            {
+                k.Host(builder.Configuration.GetConnectionString("kafka-producer")); // Kafka broker address
+                k.TopicEndpoint<ProductEntity>("my-topic", "consumer-group-name", e =>
+                {
+                    e.ConfigureConsumer<MessageConsumer>(context);
+                });
+            });
+        });
+    });
+}

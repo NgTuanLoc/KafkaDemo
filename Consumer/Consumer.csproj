@@ -1,13 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Aspire.Confluent.Kafka" Version="8.2.1" />
-	</ItemGroup>
-
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Confluent.Kafka" Version="9.0.0" />
+    <PackageReference Include="MassTransit" Version="8.3.3-develop.2143" />
+    <PackageReference Include="MassTransit.Kafka" Version="8.3.3-develop.2143" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharedLibrary\SharedLibrary.csproj" />
+  </ItemGroup>
 </Project>

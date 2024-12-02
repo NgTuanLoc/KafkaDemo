@@ -1,24 +1,81 @@
-using Confluent.Kafka;
+using MassTransit;
+using SharedLibrary;
+using Microsoft.EntityFrameworkCore;
+using Producer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddKafkaProducer<string, string>("messaging");
-// Add services to the container.
+builder.Services.AddSingleton<ConvertDomainEventsToOutboxMessagesInterceptor>();
+
+builder.Services.AddDbContext<ProducerDbContext>((options, optionsBuilder) =>
+{
+    var connString = builder.Configuration.GetConnectionString("postgres");
+    var interceptor = options.GetRequiredService<ConvertDomainEventsToOutboxMessagesInterceptor>();
+
+    optionsBuilder.UseNpgsql(connString, sqlOptions =>
+    {
+        sqlOptions.MigrationsHistoryTable("__MigrationsHistory", "products");
+        sqlOptions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
+    }).AddInterceptors(interceptor);
+});
+
+builder.Services.AddCronJob<ProcessOutboxMessagesJob>(c =>
+{
+    c.TimeZoneInfo = TimeZoneInfo.Utc;
+    c.CronExpression = "* * * * *";
+});
+
+AddEventBus(builder);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+//// Configure the HTTP request pipeline
+//app.MapGet("/", async (ITopicProducer<MyMessage> producer) =>
+//{
+//    var message = new MyMessage()
+//    {
+//        Text = Guid.NewGuid().ToString()
+//    };
 
-app.MapGet("/", async (IProducer<string, string> producer) =>
+//    await producer.Produce(message); // Publish message using MassTransit
+//    return "Producer";
+//});
+
+// Configure the HTTP request pipeline
+app.MapGet("/", async (ProducerDbContext context, CancellationToken cancellationToken) =>
 {
-    var message = new Message<string, string>()
+    var id = Guid.NewGuid();
+    var product = new ProductEntity()
     {
-        Key = Guid.NewGuid().ToString(),
-        Value = Guid.NewGuid().ToString()
+        Name = $"Name {id}",
+        Description = $"Description {id}"
     };
-    var topicPartition = new TopicPartition("my-topic", new Partition(3));
-    await producer.ProduceAsync(topicPartition, message);
-    return "Producer";
+    product.RegisterDomainEvent(new ProductCreated(product.Id, product.Name, product.Description));
+    context.Products.Add(product);
+    await context.SaveChangesAsync(cancellationToken);
+    return Results.Created();
 });
 
 await app.RunAsync();
+
+static void AddEventBus(WebApplicationBuilder builder)
+{
+    // Configure MassTransit with Kafka Rider
+    builder.Services.AddMassTransit(config =>
+    {
+        config.UsingInMemory((context, cfg) =>
+        {
+            cfg.ConfigureEndpoints(context);
+        });
+
+        config.AddRider(rider =>
+        {
+            rider.AddProducer<ProductEntity>("my-topic");
+
+            rider.UsingKafka((context, k) =>
+            {
+                k.Host(builder.Configuration.GetConnectionString("kafka-producer")); // Kafka broker address
+            });
+        });
+    });
+}
