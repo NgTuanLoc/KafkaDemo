@@ -1,0 +1,10 @@
+﻿{
+    "type": "record",
+    "name": "ProductEntity",
+    "namespace": "MyNamespace",
+    "fields": [
+        { "name": "Id", "type": "string" },
+        { "name": "Name", "type": "string" },
+        { "name": "Description", "type": "string" }
+    ]
+}

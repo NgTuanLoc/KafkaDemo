@@ -70,12 +70,13 @@ static void AddEventBus(WebApplicationBuilder builder)
 
         config.AddRider(rider =>
         {
-            rider.AddProducer<ProductEntity>("my-topic");
+            // Register the Event Hub producer
+            rider.AddProducer<ProductEntity>("my-event-hub");
 
-
-            rider.UsingKafka((context, k) =>
+            rider.UsingEventHub((context, cfg) =>
             {
-                k.Host(builder.Configuration.GetConnectionString("kafka-producer")); // Kafka broker address
+                cfg.Host(builder.Configuration.GetConnectionString("event-hub"));
+
             });
         });
     });

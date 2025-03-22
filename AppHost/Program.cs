@@ -24,7 +24,6 @@ var citusServer = builder
 var postgres = citusServer.AddDatabase("postgres");
 
 builder.AddProject<Projects.Producer>("producer")
-    .WithReplicas(5)
     .WithReference(messaging).WaitFor(messaging)
     .WithReference(postgres).WaitFor(postgres);
 

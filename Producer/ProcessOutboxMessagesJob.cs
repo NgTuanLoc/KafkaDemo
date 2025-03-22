@@ -2,6 +2,7 @@
 using Dapper;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using SharedLibrary;
 using SharedLibrary.TransactionalOutbox;
@@ -24,7 +25,8 @@ public class ProcessOutboxMessagesJob(IScheduleConfig<ProcessOutboxMessagesJob> 
     public override async Task DoWork(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var producer = scope.ServiceProvider.GetRequiredService<ITopicProducer<ProductEntity>>();
+        var producerProvider = scope.ServiceProvider.GetRequiredService<IEventHubProducerProvider>();
+        var producer = await producerProvider.GetProducer("product-eh");
 
         string query = "SELECT * FROM \"EventStreaming\".transactional_outbox ORDER BY \"OccurredOn\" LIMIT @BatchSize FOR UPDATE SKIP LOCKED";
 
