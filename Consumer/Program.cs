@@ -4,7 +4,7 @@ using MassTransit;
 using SharedLibrary;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.AddKafkaConsumer<string, string>("messaging");
+//builder.AddKafkaConsumer<string, string>("messaging");
 
 AddEventBus(builder);
 //builder.Services.AddHostedService<EventConsumerJob>();
@@ -14,15 +14,15 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-app.MapGet("/", (IConsumer<string, string> consumer) =>
-{
-    consumer.Subscribe(["my-topic"]);
-    var test = consumer.Consume(TimeSpan.FromMinutes(5000));
-    Console.WriteLine($"CONSUME {test.Partition.Value}");
-    Console.WriteLine(test.Message.Value);
+//app.MapGet("/", (IConsumer<string, string> consumer) =>
+//{
+//    consumer.Subscribe(["my-topic"]);
+//    var test = consumer.Consume(TimeSpan.FromMinutes(5000));
+//    Console.WriteLine($"CONSUME {test.Partition.Value}");
+//    Console.WriteLine(test.Message.Value);
 
-    return "Consumer";
-});
+//    return "Consumer";
+//});
 
 await app.RunAsync();
 
@@ -43,9 +43,10 @@ static void AddEventBus(WebApplicationBuilder builder)
             rider.UsingKafka((context, k) =>
             {
                 k.Host(builder.Configuration.GetConnectionString("kafka-producer")); // Kafka broker address
-                k.TopicEndpoint<ProductEntity>("my-topic", "consumer-group-name", e =>
+                k.TopicEndpoint<ProductEntity>("my-topic", "my-consumer-group", e =>
                 {
                     e.ConfigureConsumer<MessageConsumer>(context);
+                    e.CreateIfMissing();
                 });
             });
         });

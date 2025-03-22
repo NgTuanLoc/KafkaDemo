@@ -1,5 +1,4 @@
 ﻿using Confluent.Kafka;
-using Microsoft.AspNetCore.Hosting.Server;
 
 namespace Consumer;
 
@@ -23,7 +22,7 @@ public class EventConsumerJob(ILogger<EventConsumerJob> logger, IConsumer<string
                     continue;
                 }
 
-                _logger.LogInformation($"Consumed message '{consumeResult.Message.Value}' at: '{consumeResult.Offset}'");
+                _logger.LogInformation("Consumed message '{MessageValue}' at: '{Offset}'", consumeResult.Message.Value, consumeResult.Offset);
             }
             catch (Exception)
             {

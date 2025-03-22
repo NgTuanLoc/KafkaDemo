@@ -72,6 +72,7 @@ static void AddEventBus(WebApplicationBuilder builder)
         {
             rider.AddProducer<ProductEntity>("my-topic");
 
+
             rider.UsingKafka((context, k) =>
             {
                 k.Host(builder.Configuration.GetConnectionString("kafka-producer")); // Kafka broker address
